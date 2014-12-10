@@ -33,6 +33,4 @@ func Copy(doc interface{}) (thecopy interface{}, err error) {
 	default:
 		return nil, errors.New("Encountered an unknown Type")
 	}
-
-	return nil, errors.New("I don't know what happened here")
 }

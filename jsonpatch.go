@@ -27,7 +27,7 @@ func Patch(doc interface{}, patch interface{}) (ret interface{}, err error) {
 				}
 				path, err := parseDocPath(pathString)
 				if err != nil {
-					return doc, errors.New(fmt.Sprintf("The Patch Operation @ index %v did not have a valid path attribute. Resulted in error: ", i, err.Error()))
+					return doc, errors.New(fmt.Sprintf("The Patch Operation @ index %v did not have a valid path attribute. Resulted in error: %v", i, err.Error()))
 				}
 
 				switch patchOp["op"] {
@@ -65,7 +65,7 @@ func Patch(doc interface{}, patch interface{}) (ret interface{}, err error) {
 					}
 					from, err := parseDocPath(fromString)
 					if err != nil {
-						return doc, errors.New(fmt.Sprintf("The Move Patch Operation @ index %v did not have a valid from attribute. Resulted in error: ", i, err.Error()))
+						return doc, errors.New(fmt.Sprintf("The Move Patch Operation @ index %v did not have a valid from attribute. Resulted in error: %v", i, err.Error()))
 					}
 					ret, err = patchMove(ret, path, from)
 					if err != nil {
@@ -82,7 +82,7 @@ func Patch(doc interface{}, patch interface{}) (ret interface{}, err error) {
 					}
 					from, err := parseDocPath(fromString)
 					if err != nil {
-						return doc, errors.New(fmt.Sprintf("The Move Patch Operation @ index %v did not have a valid from attribute. Resulted in error: ", i, err.Error()))
+						return doc, errors.New(fmt.Sprintf("The Move Patch Operation @ index %v did not have a valid from attribute. Resulted in error: %v", i, err.Error()))
 					}
 					ret, err = patchCopy(ret, path, from)
 					if err != nil {

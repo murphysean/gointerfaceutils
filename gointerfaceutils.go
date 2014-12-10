@@ -61,8 +61,6 @@ func getValueAtSelector(doc interface{}, selector string) (ret interface{}, err 
 	default:
 		return doc, errors.New("The selector " + selector + " wasn't valid for the document")
 	}
-
-	return doc, errors.New("I don't know what happened")
 }
 
 func getValueAtPath(doc interface{}, path []string) (ret interface{}, err error) {

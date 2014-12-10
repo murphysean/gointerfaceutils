@@ -1,7 +1,5 @@
 package gointerfaceutils
 
-import "errors"
-
 func MergePatch(target interface{}, patch interface{}) (ret interface{}, err error) {
 	ret, err = Copy(target)
 	if err != nil {
@@ -27,5 +25,4 @@ func MergePatch(target interface{}, patch interface{}) (ret interface{}, err err
 	} else {
 		return patch, nil
 	}
-	return target, errors.New("Not really sure what happened here")
 }
