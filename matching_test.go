@@ -7,8 +7,12 @@ import (
 )
 
 var positiveMatchingTests = []string{
+	`firstName=Sean`,
+	`{"firstName":"Sean","lastName":"Bob"}`,
 	`obj.name.first=Sean`,
 	`{"name":{"first":"Sean"}}`,
+	`obj.phones[2].digits=987654321`,
+	`{"name":{"first":"Sean"},"phones":[{"digits":12345},{"digits":56789},{"digits":987654321}]}`,
 }
 
 func TestMatchingPath(t *testing.T) {

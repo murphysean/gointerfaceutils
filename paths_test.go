@@ -22,7 +22,7 @@ var positiveObjPathTests = []interface{}{
 	`doc.obj.something.here`,
 	[]string{"obj", "something", "here"},
 	`doc`,
-	[]string{},
+	[]string{"doc"},
 	`doc.obj[0].twenty`,
 	[]string{"obj", "0", "twenty"},
 	`doc.some.really.long.path[0][10000].to.a.thing`,

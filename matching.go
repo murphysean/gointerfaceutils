@@ -1,7 +1,6 @@
 package gointerfaceutils
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -17,7 +16,6 @@ func MatchQuery(doc interface{}, query url.Values) bool {
 		//Get the value at the query key
 		obj, err := getValueAtPath(doc, path)
 		if err != nil {
-			fmt.Println(err)
 			return false
 		}
 		//Now see if the value matches the obj

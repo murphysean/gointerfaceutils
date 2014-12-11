@@ -31,12 +31,15 @@ func parseDocPath(docPath string) ([]string, error) {
 //'user.name.first' -> ["name","first"]
 //'user.phonenumbers[0].number' -> ["phonenumbers","0","number"]
 func parseObjPath(objPath string) ([]string, error) {
+	if objPath == "" {
+		return []string{}, nil
+	}
 	//First turn all the array accessors into .<num> instead of [num]
 	re := regexp.MustCompile("(\\[([0-9]+)\\])")
 	objPath = re.ReplaceAllString(objPath, ".${2}")
 
 	if !strings.ContainsAny(objPath, ".") {
-		return []string{}, nil
+		return []string{objPath}, nil
 	}
 
 	//Now split it up

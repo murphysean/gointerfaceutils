@@ -85,7 +85,7 @@ func TestSetValueAtPath(t *testing.T) {
 }
 
 func TestSetValueAtRootPath(t *testing.T) {
-	path, err := parseObjPath("obj")
+	path, err := parseObjPath("")
 	if err != nil {
 		t.Error(err)
 		return
