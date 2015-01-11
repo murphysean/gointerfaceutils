@@ -1,9 +1,25 @@
 package gointerfaceutils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"strconv"
 )
+
+func GetMD5HashForJSONDoc(doc interface{}) (string, error) {
+	bytes, err := json.Marshal(doc)
+	if err != nil {
+		return "", err
+	}
+
+	text := string(bytes)
+
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
 
 func SetValueAtDocPath(doc interface{}, docPath string, value interface{}) (interface{}, error) {
 	path, err := parseDocPath(docPath)
