@@ -8,17 +8,22 @@ import (
 	"strconv"
 )
 
-func GetMD5HashForJSONDoc(doc interface{}) (string, error) {
-	bytes, err := json.Marshal(doc)
-	if err != nil {
-		return "", err
-	}
+func GetMD5HashForString(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
 
+func GetMD5HashForJSONDoc(doc interface{}) string {
+	bytes, err := json.Marshal(&doc)
+	if err != nil {
+		return ""
+	}
 	text := string(bytes)
 
 	hasher := md5.New()
 	hasher.Write([]byte(text))
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func SetValueAtDocPath(doc interface{}, docPath string, value interface{}) (interface{}, error) {
