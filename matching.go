@@ -2,14 +2,34 @@ package gointerfaceutils
 
 import (
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func MatchQuery(doc interface{}, query url.Values) bool {
 	for k, v := range query {
+		key := k
+		condition := "="
+		//First determine if the last character in the key is one of (!,>,<)
+		if len(k) > 1 {
+			lastChar := k[len(k)-1]
+			switch lastChar {
+			case '!':
+				key = k[:len(k)-1]
+				condition = "!="
+			case '<':
+				key = k[:len(k)-1]
+				condition = "<="
+			case '>':
+				key = k[:len(k)-1]
+				condition = ">="
+			}
+
+		}
 		//Parse the key path
-		path, err := parseObjPath(k)
+		path, err := parseObjPath(key)
 		if err != nil {
 			return false
 		}
@@ -19,7 +39,7 @@ func MatchQuery(doc interface{}, query url.Values) bool {
 			return false
 		}
 		//Now see if the value matches the obj
-		if !match(obj, v) {
+		if !match(obj, v, condition) {
 			return false
 		}
 	}
@@ -27,37 +47,49 @@ func MatchQuery(doc interface{}, query url.Values) bool {
 	return true
 }
 
-func match(obj interface{}, value interface{}) bool {
+func match(obj interface{}, value interface{}, condition string) bool {
 	switch obj.(type) {
 	case map[string]interface{}:
-		return matchMap(obj.(map[string]interface{}), value)
+		return matchMap(obj.(map[string]interface{}), value, condition)
 	case []interface{}:
-		return matchArray(obj.([]interface{}), value)
+		return matchArray(obj.([]interface{}), value, condition)
 	case string:
-		return matchString(obj.(string), value)
+		return matchString(obj.(string), value, condition)
 	case float64:
-		return matchFloat64(obj.(float64), value)
+		return matchFloat64(obj.(float64), value, condition)
 	case bool:
-		return matchBool(obj.(bool), value)
+		return matchBool(obj.(bool), value, condition)
 	case nil:
-		return matchNull(value)
+		return matchNull(value, condition)
 	}
 	return false
 }
 
-func matchMap(obj map[string]interface{}, value interface{}) bool {
+func matchMap(obj map[string]interface{}, value interface{}, condition string) bool {
 	switch value.(type) {
 	case map[string]interface{}:
-		return Equals(obj, value)
+		switch condition {
+		case "=":
+			return Equals(obj, value)
+		case "!=":
+			return !Equals(obj, value)
+		}
+		return false
 	default:
 		return false
 	}
 }
 
-func matchArray(obj []interface{}, value interface{}) bool {
+func matchArray(obj []interface{}, value interface{}, condition string) bool {
 	switch value.(type) {
 	case []interface{}:
-		return Equals(obj, value)
+		switch condition {
+		case "=":
+			return Equals(obj, value)
+		case "!=":
+			return !Equals(obj, value)
+		}
+
 	case []string:
 		//Do something of a contains
 		allMatch := true
@@ -65,30 +97,31 @@ func matchArray(obj []interface{}, value interface{}) bool {
 		for _, s := range value.([]string) {
 			oneMatch := false
 			//See if it matches one of the string values
+		INLOOP:
 			for _, v := range obj {
 				switch v.(type) {
 				case string:
-					if matchString(v.(string), s) {
+					if matchString(v.(string), s, condition) {
 						oneMatch = true
-						break
+						break INLOOP
 					}
 				case float64:
-					if matchFloat64(v.(float64), s) {
+					if matchFloat64(v.(float64), s, condition) {
 						oneMatch = true
-						break
+						break INLOOP
 					}
 				case bool:
-					if matchBool(v.(bool), s) {
+					if matchBool(v.(bool), s, condition) {
 						oneMatch = true
-						break
+						break INLOOP
 					}
 				case nil:
-					if matchNull(s) {
+					if matchNull(s, condition) {
 						oneMatch = true
-						break
+						break INLOOP
 					}
 				default:
-					continue
+					continue INLOOP
 				}
 			}
 			if !oneMatch {
@@ -104,19 +137,19 @@ func matchArray(obj []interface{}, value interface{}) bool {
 		for _, v := range obj {
 			switch v.(type) {
 			case string:
-				if matchString(v.(string), s) {
+				if matchString(v.(string), s, condition) {
 					return true
 				}
 			case float64:
-				if matchFloat64(v.(float64), s) {
+				if matchFloat64(v.(float64), s, condition) {
 					return true
 				}
 			case bool:
-				if matchBool(v.(bool), s) {
+				if matchBool(v.(bool), s, condition) {
 					return true
 				}
 			case nil:
-				if matchNull(s) {
+				if matchNull(s, condition) {
 					return true
 				}
 			default:
@@ -129,23 +162,82 @@ func matchArray(obj []interface{}, value interface{}) bool {
 	return false
 }
 
-func matchString(obj string, value interface{}) bool {
+func matchString(obj string, value interface{}, condition string) bool {
 	switch value.(type) {
 	case []interface{}:
-		for _, v := range value.([]interface{}) {
-			if matchString(obj, v) {
-				return true
+		switch condition {
+		case "=":
+			for _, v := range value.([]interface{}) {
+				if matchString(obj, v, "=") {
+					return true
+				}
 			}
+			return false
+		case "!=":
+			for _, v := range value.([]interface{}) {
+				if matchString(obj, v, "=") {
+					return false
+				}
+			}
+			return true
 		}
 	case []string:
-		for _, v := range value.([]string) {
-			if matchString(obj, v) {
-				return true
+		switch condition {
+		case "!=":
+			for _, v := range value.([]string) {
+				if matchString(obj, v, "=") {
+					return false
+				}
+			}
+			return true
+		default:
+			for _, v := range value.([]string) {
+				if matchString(obj, v, condition) {
+					return true
+				}
 			}
 		}
 	case string:
 		if obj == value.(string) {
-			return true
+			if condition == "=" {
+				return true
+			} else if condition == "!=" {
+				return false
+			}
+		}
+		//The query value could be a Regular Expression
+		if sv, ok := value.(string); ok && (condition == "=" || condition == "!=") {
+			if re, err := regexp.Compile(sv); err == nil {
+				if re.MatchString(obj) {
+					if condition == "=" {
+						return true
+					} else if condition == "!=" {
+						return false
+					}
+				}
+				if condition == "!=" {
+					return true
+				}
+			}
+		}
+		//The object could be a string encoded number
+		if num, err := strconv.ParseFloat(obj, 64); err == nil {
+			return matchFloat64(num, value.(string), condition)
+		}
+		//The object could be a string encoded date
+		if t1, err := time.Parse(time.RFC3339Nano, obj); err == nil {
+			if t2, err := time.Parse(time.RFC3339Nano, value.(string)); err == nil {
+				switch condition {
+				case "=":
+					return t1.Equal(t2)
+				case "!=":
+					return !t1.Equal(t2)
+				case ">=":
+					return t1.After(t2)
+				case "<=":
+					return t1.Before(t2)
+				}
+			}
 		}
 	default:
 		return false
@@ -153,87 +245,93 @@ func matchString(obj string, value interface{}) bool {
 	return false
 }
 
-func matchFloat64(obj float64, value interface{}) bool {
+func matchFloat64(obj float64, value interface{}, condition string) bool {
 	switch value.(type) {
 	case []interface{}:
 		for _, v := range value.([]interface{}) {
-			if matchFloat64(obj, v) {
+			if matchFloat64(obj, v, condition) {
 				return true
 			}
 		}
 	case []string:
 		for _, v := range value.([]string) {
-			if matchFloat64(obj, v) {
+			if matchFloat64(obj, v, condition) {
 				return true
 			}
 		}
 	case string:
 		v, err := strconv.ParseFloat(value.(string), 64)
-		if err == nil && obj == v {
-			return true
+		if err != nil {
+			return false
 		}
+		return matchFloat64(obj, v, condition)
 	case float64:
+		switch condition {
+		case "=":
+			return obj == value.(float64)
+		case "!=":
+			return obj != value.(float64)
+		case ">=":
+			return obj >= value.(float64)
+		case "<=":
+			return obj <= value.(float64)
+		}
 		if obj == value.(float64) {
 			return true
 		}
 	case float32:
-		if obj == float64(value.(float32)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(float32)), condition)
 	case int64:
-		if obj == float64(value.(int64)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(int64)), condition)
 	case int32:
-		if obj == float64(value.(int32)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(int32)), condition)
 	case int16:
-		if obj == float64(value.(int16)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(int16)), condition)
 	case int8:
-		if obj == float64(value.(int8)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(int8)), condition)
 	case int:
-		if obj == float64(value.(int)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(int)), condition)
 	case byte:
-		if obj == float64(value.(byte)) {
-			return true
-		}
+		return matchFloat64(obj, float64(value.(byte)), condition)
 	default:
 		return false
 	}
 	return false
 }
 
-func matchBool(obj bool, value interface{}) bool {
+func matchBool(obj bool, value interface{}, condition string) bool {
 	switch value.(type) {
 	case []interface{}:
 		for _, v := range value.([]interface{}) {
-			if matchBool(obj, v) {
+			if matchBool(obj, v, condition) {
 				return true
 			}
 		}
 	case []string:
 		for _, v := range value.([]string) {
-			if matchBool(obj, v) {
+			if matchBool(obj, v, condition) {
 				return true
 			}
 		}
 	case string:
 		s := value.(string)
 		if (obj && strings.ToLower(s) == "true") || (obj && strings.ToLower(s) == "t") {
+			if condition == "!=" {
+				return false
+			}
 			return true
 		}
 		if (!obj && strings.ToLower(s) == "false") || (!obj && strings.ToLower(s) == "f") {
+			if condition == "!=" {
+				return false
+			}
 			return true
 		}
 	case bool:
 		if obj == value.(bool) {
+			if condition == "!=" {
+				return false
+			}
 			return true
 		}
 		return false
@@ -243,26 +341,32 @@ func matchBool(obj bool, value interface{}) bool {
 	return false
 }
 
-func matchNull(value interface{}) bool {
+func matchNull(value interface{}, condition string) bool {
 	switch value.(type) {
 	case []interface{}:
 		for _, v := range value.([]interface{}) {
-			if matchNull(v) {
+			if matchNull(v, condition) {
 				return true
 			}
 		}
 	case []string:
 		for _, v := range value.([]string) {
-			if matchNull(v) {
+			if matchNull(v, condition) {
 				return true
 			}
 		}
 	case string:
 		s := value.(string)
+		if condition == "!=" && (strings.ToLower(s) == "nil" || strings.ToLower(s) == "null") {
+			return false
+		}
 		if strings.ToLower(s) == "nil" || strings.ToLower(s) == "null" {
 			return true
 		}
 	case nil:
+		if condition == "!=" {
+			return false
+		}
 		return true
 	default:
 		return false
