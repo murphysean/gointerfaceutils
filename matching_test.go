@@ -25,6 +25,10 @@ var positiveMatchingTests = []string{
 	`{"rating":"5"}`,
 	`createDate%3E=2006-01-02T15%3A04%3A05.999999999-07%3A00`,
 	`{"createDate":"2014-01-02T15:04:05-07:00"}`,
+	`createDate%3E=2006-01-02T15%3A04%3A05.999999999-07%3A00`,
+	`{"createDate":"2014-01-02T15:04:05.999999999-07:00"}`,
+	`search=amazing`,
+	`{"a":"cool","b":"properly awesome","c":"sweetly amazing"}`,
 }
 
 func TestMatchingPath(t *testing.T) {

@@ -11,6 +11,11 @@ import (
 func MatchQuery(doc interface{}, query url.Values) bool {
 	for k, v := range query {
 		key := k
+		if key == "search" {
+			if fullTextSearch(doc, v) {
+				return true
+			}
+		}
 		condition := "="
 		//First determine if the last character in the key is one of (!,>,<)
 		if len(k) > 1 {
@@ -26,7 +31,6 @@ func MatchQuery(doc interface{}, query url.Values) bool {
 				key = k[:len(k)-1]
 				condition = ">="
 			}
-
 		}
 		//Parse the key path
 		path, err := parseObjPath(key)
@@ -45,6 +49,47 @@ func MatchQuery(doc interface{}, query url.Values) bool {
 	}
 
 	return true
+}
+
+func fullTextSearch(doc interface{}, search []string) bool {
+	switch doc.(type) {
+	case []interface{}:
+		if matchArray(doc.([]interface{}), search, "=") {
+			return true
+		}
+	case map[string]interface{}:
+		//Iterate through all the attributes of the object
+		for k, v := range doc.(map[string]interface{}) {
+			for _, s := range search {
+				if k == s {
+					return true
+				}
+			}
+			if fullTextSearch(v, search) {
+				return true
+			}
+		}
+	case string:
+		if matchString(doc.(string), search, "=") {
+			return true
+		}
+	case float64:
+		if matchFloat64(doc.(float64), search, "=") {
+			return true
+		}
+	case bool:
+		if matchBool(doc.(bool), search, "=") {
+			return true
+		}
+	case nil:
+		if matchNull(search, "=") {
+			return true
+		}
+	default:
+		return false
+	}
+
+	return false
 }
 
 func match(obj interface{}, value interface{}, condition string) bool {
@@ -89,7 +134,6 @@ func matchArray(obj []interface{}, value interface{}, condition string) bool {
 		case "!=":
 			return !Equals(obj, value)
 		}
-
 	case []string:
 		//Do something of a contains
 		allMatch := true
