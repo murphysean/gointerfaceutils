@@ -28,6 +28,8 @@ func Copy(doc interface{}) (thecopy interface{}, err error) {
 		return doc.(string), nil
 	case float64:
 		return doc.(float64), nil
+	case bool:
+		return doc.(bool), nil
 	case nil:
 		return nil, nil
 	default:

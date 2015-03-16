@@ -2,6 +2,7 @@ package gointerfaceutils
 
 import (
 	"errors"
+	"strconv"
 	"time"
 )
 
@@ -91,11 +92,7 @@ func GetStringAtDocPath(doc interface{}, docPath string) (string, error) {
 		return "", err
 	}
 
-	if s, ok := val.(string); !ok {
-		return "", errors.New("Value at " + docPath + " path was not a string")
-	} else {
-		return s, nil
-	}
+	return getStringFromValue(val)
 }
 
 func MustGetStringAtObjPath(doc interface{}, objPath string) string {
@@ -109,10 +106,21 @@ func GetStringAtObjPath(doc interface{}, objPath string) (string, error) {
 		return "", err
 	}
 
-	if s, ok := val.(string); !ok {
-		return "", errors.New("Value at " + objPath + " path was not a string")
-	} else {
-		return s, nil
+	return getStringFromValue(val)
+}
+
+func getStringFromValue(val interface{}) (string, error) {
+	switch val.(type) {
+	case string:
+		return val.(string), nil
+	case float64:
+		return strconv.FormatFloat(val.(float64), 'G', -1, 64), nil
+	case bool:
+		return strconv.FormatBool(val.(bool)), nil
+	case nil:
+		return "null", nil
+	default:
+		return "", errors.New("Value at path was not a string")
 	}
 }
 
@@ -128,16 +136,7 @@ func GetTimeAtDocPath(doc interface{}, docPath string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	switch val.(type) {
-	case time.Time:
-		return val.(time.Time), nil
-	case string:
-		return time.Parse(time.RFC3339Nano, val.(string))
-	case float64:
-		return time.Unix(0, int64(val.(float64)*1000000)), nil
-	default:
-		return time.Time{}, errors.New("Value at " + docPath + " path was not a valid time value")
-	}
+	return getTimeFromValue(val)
 }
 
 func MustGetTimeAtObjPath(doc interface{}, objPath string) time.Time {
@@ -151,6 +150,10 @@ func GetTimeAtObjPath(doc interface{}, objPath string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
+	return getTimeFromValue(val)
+}
+
+func getTimeFromValue(val interface{}) (time.Time, error) {
 	switch val.(type) {
 	case time.Time:
 		return val.(time.Time), nil
@@ -159,7 +162,7 @@ func GetTimeAtObjPath(doc interface{}, objPath string) (time.Time, error) {
 	case float64:
 		return time.Unix(0, int64(val.(float64)*1000000)), nil
 	default:
-		return time.Time{}, errors.New("Value at " + objPath + " path was not a valid time value")
+		return time.Time{}, errors.New("Value at path was not a time.Time")
 	}
 }
 
@@ -175,11 +178,7 @@ func GetFloatAtDocPath(doc interface{}, docPath string) (float64, error) {
 		return 0.0, err
 	}
 
-	if s, ok := val.(float64); !ok {
-		return 0.0, errors.New("Value at " + docPath + " path was not a float64")
-	} else {
-		return s, nil
-	}
+	return getFloatFromValue(val)
 }
 
 func MustGetFloatAtObjPath(doc interface{}, objPath string) float64 {
@@ -193,10 +192,23 @@ func GetFloatAtObjPath(doc interface{}, objPath string) (float64, error) {
 		return 0.0, err
 	}
 
-	if i, ok := val.(float64); !ok {
-		return 0.0, errors.New("Value at " + objPath + " path was not a float64")
-	} else {
-		return i, nil
+	return getFloatFromValue(val)
+}
+
+func getFloatFromValue(val interface{}) (float64, error) {
+	switch val.(type) {
+	case float64:
+		return val.(float64), nil
+	case string:
+		return strconv.ParseFloat(val.(string), 64)
+	case bool:
+		if val.(bool) {
+			return 1, nil
+		} else {
+			return 0, nil
+		}
+	default:
+		return 0, errors.New("Value at path was not a float64")
 	}
 }
 
@@ -212,11 +224,7 @@ func GetBooleanAtDocPath(doc interface{}, docPath string) (bool, error) {
 		return false, err
 	}
 
-	if b, ok := val.(bool); !ok {
-		return false, errors.New("Value at " + docPath + " path was not a boolean")
-	} else {
-		return b, nil
-	}
+	return getBooleanFromValue(val)
 }
 
 func MustGetBooleanAtObjPath(doc interface{}, objPath string) bool {
@@ -230,9 +238,22 @@ func GetBooleanAtObjPath(doc interface{}, objPath string) (bool, error) {
 		return false, err
 	}
 
-	if b, ok := val.(bool); !ok {
-		return false, errors.New("Value at " + objPath + " path was not a boolean")
-	} else {
-		return b, nil
+	return getBooleanFromValue(val)
+}
+
+func getBooleanFromValue(val interface{}) (bool, error) {
+	switch val.(type) {
+	case float64:
+		if val.(float64) == 0 {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	case string:
+		return strconv.ParseBool(val.(string))
+	case bool:
+		return val.(bool), nil
+	default:
+		return false, errors.New("Value at path was not a boolean")
 	}
 }
