@@ -24,6 +24,16 @@ func Copy(doc interface{}) (thecopy interface{}, err error) {
 			ret[i] = val
 		}
 		return ret, nil
+	case []string:
+		ret := make([]string, len(doc.([]string)))
+		for j, _ := range doc.([]string) {
+			val, err := Copy(doc.([]string)[j])
+			if err != nil {
+				return doc, err
+			}
+			ret[j] = val.(string)
+		}
+		return ret, nil
 	case string:
 		return doc.(string), nil
 	case float64:

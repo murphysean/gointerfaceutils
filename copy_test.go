@@ -80,6 +80,9 @@ func TestCopy(t *testing.T) {
 		case []interface{}:
 			doc1.([]interface{})[0] = "ELEMENT 0 IS NOW THIS"
 			doc1 = append(doc1.([]interface{}), float64(885))
+		case []string:
+			doc1.([]string)[0] = "ELEMENT 0 IS NOW THIS"
+			doc1 = append(doc1.([]string), "885")
 		case string:
 			doc1 = "A Whole New String"
 		case float64:
