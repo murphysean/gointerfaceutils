@@ -80,6 +80,55 @@ func GetArrayAtObjPath(doc interface{}, objPath string) ([]interface{}, error) {
 	}
 }
 
+//STRING ARRAY-------------------------------------------------------------------------------------
+func MustGetStringArrayAtDocPath(doc interface{}, docPath string) []string {
+	a, _ := GetStringArrayAtDocPath(doc, docPath)
+	return a
+}
+
+func GetStringArrayAtDocPath(doc interface{}, docPath string) ([]string, error) {
+	val, err := GetValueAtDocPath(doc, docPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if a, ok := val.([]interface{}); ok {
+		arr := make([]string, 0)
+		for _, v := range a {
+			arr = append(arr, MustGetStringAtDocPath(v, "/"))
+		}
+		return arr, nil
+	}
+	if a, ok := val.([]string); ok {
+		return a, nil
+	}
+	return nil, errors.New("Value at " + docPath + " path was not an array")
+}
+
+func MustGetStringArrayAtObjPath(doc interface{}, objPath string) []string {
+	a, _ := GetStringArrayAtObjPath(doc, objPath)
+	return a
+}
+
+func GetStringArrayAtObjPath(doc interface{}, objPath string) ([]string, error) {
+	val, err := GetValueAtObjPath(doc, objPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if a, ok := val.([]interface{}); ok {
+		arr := make([]string, 0)
+		for _, v := range a {
+			arr = append(arr, MustGetStringAtDocPath(v, "/"))
+		}
+		return arr, nil
+	}
+	if a, ok := val.([]string); ok {
+		return a, nil
+	}
+	return nil, errors.New("Value at " + objPath + " path was not an array")
+}
+
 //STRING-----------------------------------------------------------------------------------------
 func MustGetStringAtDocPath(doc interface{}, docPath string) string {
 	s, _ := GetStringAtDocPath(doc, docPath)

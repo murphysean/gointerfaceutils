@@ -79,6 +79,15 @@ func getValueAtSelector(doc interface{}, selector string) (ret interface{}, err 
 			return doc, errors.New("The selector " + selector + " was an out of bound index into the array")
 		}
 		return doc.([]interface{})[i], nil
+	case []string:
+		i, err := strconv.Atoi(selector)
+		if err != nil {
+			return doc, errors.New("The selector " + selector + " wasn't a valid index into the array")
+		}
+		if 0 > i || i >= len(doc.([]string)) {
+			return doc, errors.New("The selector " + selector + " was an out of bound index into the array")
+		}
+		return doc.([]string)[i], nil
 	default:
 		return doc, errors.New("The selector " + selector + " wasn't valid for the document")
 	}
